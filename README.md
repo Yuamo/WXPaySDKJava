@@ -4,9 +4,10 @@
 
 更新日志 
 -------------
-2018.07.04 跟新微信支付商户，最近暴露的XML外部实体注入漏洞(XML External Entity Injection，简称 XXE)，该安全问题是由XML组件默认没有禁用外部实体引用导致，非微信支付系统存在漏洞。
+* 2018.07.04 更新微信支付商户，最近暴露的XML外部实体注入漏洞(XML External Entity Injection，简称 XXE)，该安全问题是由XML组件默认没有禁用外部实体引用导致，非微信支付系统存在漏洞。
 
 
+--------------------------------------------------
 对[微信支付开发者文档](https://pay.weixin.qq.com/wiki/doc/api/index.html)中给出的API进行了封装。
 
 com.github.wxpay.sdk.WXPay类下提供了对应的方法：
