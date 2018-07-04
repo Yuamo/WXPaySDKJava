@@ -32,6 +32,12 @@ public class WXPayUtil {
     public static Map<String, String> xmlToMap(String strXML) throws Exception {
         Map<String, String> data = new HashMap<String, String>();
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+          /**
+         * 屏蔽暴露的XML外部实体注入漏洞
+         * (XML External Entity Injection，简称 XXE)
+         */
+        documentBuilderFactory.setExpandEntityReferences(false);
+        
         DocumentBuilder documentBuilder= documentBuilderFactory.newDocumentBuilder();
         InputStream stream = new ByteArrayInputStream(strXML.getBytes("UTF-8"));
         org.w3c.dom.Document doc = documentBuilder.parse(stream);
