@@ -1,10 +1,5 @@
-package com.github.wxpay.sdk;
+package com.tiuweb.wechatpay.wechatSdk;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.util.*;
-import java.security.MessageDigest;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -12,13 +7,21 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import com.github.wxpay.sdk.WXPayConstants.SignType;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.security.MessageDigest;
+import java.util.*;
 
+import com.tiuweb.wechatpay.wechatSdk.WXPayConstants.SignType;
+import org.xml.sax.SAXException;
 
 public class WXPayUtil {
 
@@ -31,14 +34,47 @@ public class WXPayUtil {
      */
     public static Map<String, String> xmlToMap(String strXML) throws Exception {
         Map<String, String> data = new HashMap<String, String>();
-        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-          /**
-         * 屏蔽暴露的XML外部实体注入漏洞
-         * (XML External Entity Injection，简称 XXE)
-         */
-        documentBuilderFactory.setExpandEntityReferences(false);
-        
-        DocumentBuilder documentBuilder= documentBuilderFactory.newDocumentBuilder();
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+
+        String FEATURE = null;
+        try {
+            // This is the PRIMARY defense. If DTDs (doctypes) are disallowed, almost all XML entity attacks are prevented
+            // Xerces 2 only - http://xerces.apache.org/xerces2-j/features.html#disallow-doctype-decl
+            FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
+            dbf.setFeature(FEATURE, true);
+
+            // If you can't completely disable DTDs, then at least do the following:
+            // Xerces 1 - http://xerces.apache.org/xerces-j/features.html#external-general-entities
+            // Xerces 2 - http://xerces.apache.org/xerces2-j/features.html#external-general-entities
+            // JDK7+ - http://xml.org/sax/features/external-general-entities
+            FEATURE = "http://xml.org/sax/features/external-general-entities";
+            dbf.setFeature(FEATURE, false);
+
+            // Xerces 1 - http://xerces.apache.org/xerces-j/features.html#external-parameter-entities
+            // Xerces 2 - http://xerces.apache.org/xerces2-j/features.html#external-parameter-entities
+            // JDK7+ - http://xml.org/sax/features/external-parameter-entities
+            FEATURE = "http://xml.org/sax/features/external-parameter-entities";
+            dbf.setFeature(FEATURE, false);
+
+            // Disable external DTDs as well
+            FEATURE = "http://apache.org/xml/features/nonvalidating/load-external-dtd";
+            dbf.setFeature(FEATURE, false);
+
+            // and these as well, per Timothy Morgan's 2014 paper: "XML Schema, DTD, and Entity Attacks"
+            dbf.setXIncludeAware(false);
+            dbf.setExpandEntityReferences(false);
+
+            // And, per Timothy Morgan: "If for some reason support for inline DOCTYPEs are a requirement, then
+            // ensure the entity settings are disabled (as shown above) and beware that SSRF attacks
+            // (http://cwe.mitre.org/data/definitions/918.html) and denial
+            // of service attacks (such as billion laughs or decompression bombs via "jar:") are a risk."
+
+            // remaining parser logic
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        DocumentBuilder documentBuilder= dbf.newDocumentBuilder();
         InputStream stream = new ByteArrayInputStream(strXML.getBytes("UTF-8"));
         org.w3c.dom.Document doc = documentBuilder.parse(stream);
         doc.getDocumentElement().normalize();
@@ -233,7 +269,7 @@ public class WXPayUtil {
      * @return MD5结果
      */
     public static String MD5(String data) throws Exception {
-        java.security.MessageDigest md = MessageDigest.getInstance("MD5");
+        MessageDigest md = MessageDigest.getInstance("MD5");
         byte[] array = md.digest(data.getBytes("UTF-8"));
         StringBuilder sb = new StringBuilder();
         for (byte item : array) {
